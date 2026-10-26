@@ -39,7 +39,7 @@ class MainActivity : Activity() {
             setContentView(root)
 
             createWebView(savedInstanceState)
-
+Log.e("MediaHubCrash", "MainActivity onCreate started")
         } catch (e: Exception) {
             Log.e(TAG, "Startup exception", e)
             showError("Startup error", e)
