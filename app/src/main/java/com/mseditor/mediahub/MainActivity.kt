@@ -1,80 +1,66 @@
+
 package com.mseditor.mediahub
 
 import android.app.Activity
 import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.graphics.Color
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.view.View
+import android.widget.FrameLayout
 
 class MainActivity : Activity() {
 
-private val black = Color.rgb(12, 14, 16)
-private val emerald = Color.rgb(0, 190, 120)
-private val gold = Color.rgb(224, 184, 92)
+    private lateinit var webView: WebView
 
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
 
-    window.statusBarColor = black
-    window.navigationBarColor = black
+        window.statusBarColor = Color.rgb(12, 14, 16)
+        window.navigationBarColor = Color.rgb(12, 14, 16)
 
-    val root = LinearLayout(this)
-    root.orientation = LinearLayout.VERTICAL
-    root.setPadding(24, 36, 24, 24)
-    root.setBackgroundColor(black)
+        webView = WebView(this)
+        webView.setBackgroundColor(Color.rgb(12, 14, 16))
 
-    val title = TextView(this)
-    title.text = "MS Editor Media Hub"
-    title.textSize = 25f
-    title.setTextColor(gold)
-    title.gravity = Gravity.CENTER
-    title.setPadding(0, 20, 0, 12)
-    root.addView(title)
+        val settings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
 
-    val subtitle = TextView(this)
-    subtitle.text = "Your Creative Media Library"
-    subtitle.textSize = 14f
-    subtitle.setTextColor(Color.LTGRAY)
-    subtitle.gravity = Gravity.CENTER
-    root.addView(subtitle)
+        webView.webViewClient = WebViewClient()
+        webView.webChromeClient = WebChromeClient()
 
-    val categories = listOf(
-        "🎬  Movies",
-        "🎞️  Trailers",
-        "📹  Videos",
-        "🖼️  Images",
-        "🎵  Audio",
-        "✍️  Video & Image Prompts"
-    )
+        setContentView(webView)
 
-    for (category in categories) {
-        val item = TextView(this)
-        item.text = category
-        item.textSize = 18f
-        item.setTextColor(Color.WHITE)
-        item.setPadding(20, 18, 20, 18)
-        item.gravity = Gravity.CENTER_VERTICAL
-        item.setBackgroundColor(Color.rgb(26, 34, 31))
-
-        val params = LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        params.setMargins(0, 12, 0, 0)
-        root.addView(item, params)
+        if (savedInstanceState != null) {
+            webView.restoreState(savedInstanceState)
+        } else {
+            webView.loadUrl(
+                "https://sajawalkhan12.github.io/ms-editor-media-hub-/"
+            )
+        }
     }
 
-    val footer = TextView(this)
-    footer.text = "Powered by MS Editor"
-    footer.textSize = 12f
-    footer.setTextColor(emerald)
-    footer.gravity = Gravity.CENTER
-    footer.setPadding(0, 28, 0, 0)
-    root.addView(footer)
+    override fun onSaveInstanceState(outState: Bundle) {
+        webView.saveState(outState)
+        super.onSaveInstanceState(outState)
+    }
 
-    setContentView(root)
-}
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (::webView.isInitialized && webView.canGoBack()) {
+            webView.goBack()
+        } else {
+            super.onBackPressed()
+        }
+    }
 
+    override fun onDestroy() {
+        if (::webView.isInitialized) {
+            webView.destroy()
+        }
+        super.onDestroy()
+    }
 }
