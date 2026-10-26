@@ -1,169 +1,101 @@
+
 package com.mseditor.mediahub
 
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
-import android.graphics.Color
 import android.util.Log
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.webkit.WebChromeClient
 import android.webkit.WebSettings
-import android.webkit.RenderProcessGoneDetail
-import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : Activity() {
+class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val TAG = "MediaHubCrash"
-        private const val WEBSITE_URL =
-            "https://sajawalkhan12.github.io/ms-editor-media-hub-/"
-    }
+    private lateinit var webView: WebView
+    private var fileCallback: ValueCallback<Array<Uri>>? = null
 
-    private var webView: WebView? = null
-    private var container: FrameLayout? = null
+    private val filePicker =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val callback = fileCallback
+            fileCallback = null
+
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data
+                val uris = mutableListOf<Uri>()
+
+                data?.clipData?.let { clip ->
+                    for (i in 0 until clip.itemCount) {
+                        uris.add(clip.getItemAt(i).uri)
+                    }
+                }
+
+                if (uris.isEmpty()) {
+                    data?.data?.let { uris.add(it) }
+                }
+
+                callback?.onReceiveValue(uris.toTypedArray())
+            } else {
+                callback?.onReceiveValue(null)
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Log.e(TAG, "STEP 1: onCreate started")
+        webView = WebView(this)
+        setContentView(webView)
 
-        try {
-            window.statusBarColor = Color.rgb(12, 14, 16)
-            window.navigationBarColor = Color.rgb(12, 14, 16)
-
-            Log.e(TAG, "STEP 2: creating container")
-
-            val root = FrameLayout(this).apply {
-                setBackgroundColor(Color.rgb(12, 14, 16))
-            }
-
-            container = root
-            setContentView(root)
-
-            createWebView(savedInstanceState)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Startup exception", e)
-            showError("Startup error", e)
-
-        } catch (e: LinkageError) {
-            Log.e(TAG, "Startup linkage error", e)
-            showError("Android component error", e)
-        }
-    }
-
-    private fun createWebView(savedState: Bundle? = null) {
-        val root = container ?: return
-
-        Log.e(TAG, "STEP 3: creating WebView")
-
-        val browser = WebView(this)
-        webView = browser
-
-        browser.setBackgroundColor(Color.rgb(12, 14, 16))
-
-        browser.settings.apply {
+        webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            cacheMode = WebSettings.LOAD_DEFAULT
+            allowFileAccess = true
+            allowContentAccess = true
+            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
 
-        browser.webChromeClient = WebChromeClient()
+        webView.webViewClient = WebViewClient()
 
-        browser.webViewClient = object : WebViewClient() {
-
-            override fun onRenderProcessGone(
-                view: WebView,
-                detail: RenderProcessGoneDetail
+        webView.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                webView: WebView?,
+                filePathCallback: ValueCallback<Array<Uri>>?,
+                fileChooserParams: FileChooserParams?
             ): Boolean {
-                Log.e(
-                    TAG,
-                    "WebView renderer terminated. " +
-                        "Did crash: ${detail.didCrash()}"
-                )
+                this@MainActivity.fileCallback?.onReceiveValue(null)
+                this@MainActivity.fileCallback = filePathCallback
 
-                (view.parent as? ViewGroup)?.removeView(view)
-                view.stopLoading()
-                view.destroy()
+                val intent = fileChooserParams?.createIntent()
+                    ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        type = "*/*"
+                    }
 
-                if (webView === view) {
-                    webView = null
-                }
-
-                try {
-                    createWebView()
+                return try {
+                    filePicker.launch(intent)
+                    true
                 } catch (e: Exception) {
-                    Log.e(TAG, "WebView recovery failed", e)
-                    showError("WebView recovery failed", e)
-                } catch (e: LinkageError) {
-                    Log.e(TAG, "WebView recovery linkage error", e)
-                    showError("WebView recovery error", e)
+                    Log.e("MSMediaHub", "File chooser failed", e)
+                    this@MainActivity.fileCallback?.onReceiveValue(null)
+                    this@MainActivity.fileCallback = null
+                    false
                 }
-
-                return true
             }
         }
 
-        root.addView(
-            browser,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
+        webView.loadUrl(
+            "https://sajawalkhan12.github.io/ms-editor-media-hub-/"
         )
-
-        val restored = if (savedState != null) {
-            browser.restoreState(savedState)
-        } else {
-            null
-        }
-
-        if (restored == null) {
-            Log.e(TAG, "STEP 4: loading website")
-            browser.loadUrl(WEBSITE_URL)
-        }
-    }
-
-    private fun showError(title: String, error: Throwable) {
-        val message = TextView(this).apply {
-            setTextColor(Color.WHITE)
-            textSize = 16f
-            setPadding(32, 32, 32, 32)
-            text = "$title\n${error.javaClass.simpleName}\n" +
-                (error.message ?: "No additional details")
-        }
-
-        setContentView(message)
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        webView?.saveState(outState)
-        super.onSaveInstanceState(outState)
-    }
-
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        val browser = webView
-
-        if (browser != null && browser.canGoBack()) {
-            browser.goBack()
-        } else {
-            super.onBackPressed()
-        }
     }
 
     override fun onDestroy() {
-        webView?.let { browser ->
-            (browser.parent as? ViewGroup)?.removeView(browser)
-            browser.stopLoading()
-            browser.destroy()
-        }
-
-        webView = null
-        container = null
-
+        fileCallback?.onReceiveValue(null)
+        fileCallback = null
+        webView.destroy()
         super.onDestroy()
     }
 }
