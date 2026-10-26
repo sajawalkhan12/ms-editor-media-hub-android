@@ -27,9 +27,13 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        Log.e(TAG, "STEP 1: onCreate started")
+
         try {
             window.statusBarColor = Color.rgb(12, 14, 16)
             window.navigationBarColor = Color.rgb(12, 14, 16)
+
+            Log.e(TAG, "STEP 2: creating container")
 
             val root = FrameLayout(this).apply {
                 setBackgroundColor(Color.rgb(12, 14, 16))
@@ -39,10 +43,11 @@ class MainActivity : Activity() {
             setContentView(root)
 
             createWebView(savedInstanceState)
-Log.e("MediaHubCrash", "MainActivity onCreate started")
+
         } catch (e: Exception) {
             Log.e(TAG, "Startup exception", e)
             showError("Startup error", e)
+
         } catch (e: LinkageError) {
             Log.e(TAG, "Startup linkage error", e)
             showError("Android component error", e)
@@ -51,6 +56,8 @@ Log.e("MediaHubCrash", "MainActivity onCreate started")
 
     private fun createWebView(savedState: Bundle? = null) {
         val root = container ?: return
+
+        Log.e(TAG, "STEP 3: creating WebView")
 
         val browser = WebView(this)
         webView = browser
@@ -77,9 +84,7 @@ Log.e("MediaHubCrash", "MainActivity onCreate started")
                         "Did crash: ${detail.didCrash()}"
                 )
 
-                val parent = view.parent as? ViewGroup
-                parent?.removeView(view)
-
+                (view.parent as? ViewGroup)?.removeView(view)
                 view.stopLoading()
                 view.destroy()
 
@@ -116,6 +121,7 @@ Log.e("MediaHubCrash", "MainActivity onCreate started")
         }
 
         if (restored == null) {
+            Log.e(TAG, "STEP 4: loading website")
             browser.loadUrl(WEBSITE_URL)
         }
     }
