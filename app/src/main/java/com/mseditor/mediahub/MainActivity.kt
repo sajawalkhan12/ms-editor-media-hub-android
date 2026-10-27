@@ -109,4 +109,3 @@ class MainActivity : ComponentActivity() {
         setContentView(errorText)
     }
 }
-// یہاں MainActivity.kt کی آخری لائنیں پیسٹ کریں
