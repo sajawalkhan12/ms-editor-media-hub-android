@@ -45,8 +45,9 @@ class MainActivity : ComponentActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+    super.onCreate(savedInstanceState)
 
+    try {
         webView = WebView(this)
         setContentView(webView)
 
@@ -55,7 +56,8 @@ class MainActivity : ComponentActivity() {
             domStorageEnabled = true
             allowFileAccess = true
             allowContentAccess = true
-            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            mixedContentMode =
+                WebSettings.MIXED_CONTENT_NEVER_ALLOW
         }
 
         webView.webViewClient = WebViewClient()
@@ -66,8 +68,11 @@ class MainActivity : ComponentActivity() {
                 filePathCallback: ValueCallback<Array<Uri>>?,
                 fileChooserParams: FileChooserParams?
             ): Boolean {
-                this@MainActivity.fileCallback?.onReceiveValue(null)
-                this@MainActivity.fileCallback = filePathCallback
+                this@MainActivity.fileCallback
+                    ?.onReceiveValue(null)
+
+                this@MainActivity.fileCallback =
+                    filePathCallback
 
                 val intent = fileChooserParams?.createIntent()
                     ?: Intent(Intent.ACTION_GET_CONTENT).apply {
@@ -79,8 +84,9 @@ class MainActivity : ComponentActivity() {
                     filePicker.launch(intent)
                     true
                 } catch (e: Exception) {
-                    Log.e("MSMediaHub", "File chooser failed", e)
-                    this@MainActivity.fileCallback?.onReceiveValue(null)
+                    Log.e("MSMediaHub", "File picker error", e)
+                    this@MainActivity.fileCallback
+                        ?.onReceiveValue(null)
                     this@MainActivity.fileCallback = null
                     false
                 }
@@ -90,12 +96,16 @@ class MainActivity : ComponentActivity() {
         webView.loadUrl(
             "https://sajawalkhan12.github.io/ms-editor-media-hub-/"
         )
-    }
 
-    override fun onDestroy() {
-        fileCallback?.onReceiveValue(null)
-        fileCallback = null
-        webView.destroy()
-        super.onDestroy()
+    } catch (e: Exception) {
+        Log.e("MSMediaHub", "Startup error", e)
+
+        val errorText = android.widget.TextView(this).apply {
+            text = "App startup error:\n${e.javaClass.simpleName}\n${e.message}"
+            textSize = 16f
+            setPadding(32, 32, 32, 32)
+        }
+
+        setContentView(errorText)
     }
 }
