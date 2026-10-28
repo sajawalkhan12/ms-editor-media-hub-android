@@ -4,13 +4,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
         android:allowBackup="true"
         android:debuggable="true"
-        android:label="MS Editor Media Hub"
-        android:icon="@drawable/ic_ms_media_hub"
-        android:roundIcon="@drawable/ic_ms_media_hub"
+        android:label="MS Editor"
         android:usesCleartextTraffic="false"
-        android:theme="@android:style/Theme.Material.NoActionBar">
+        android:theme="@style/AppTheme">
 
         <activity
             android:name=".MainActivity"
